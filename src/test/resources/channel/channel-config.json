@@ -1,0 +1,48 @@
+{
+  "channels": [
+    {
+      "name": "Payment Channel",
+      "isEnabled": true,
+      "abilities": [
+        {
+          "name": "Payment",
+          "protocol": "HTTP",
+          "protocolConfig": {
+            "httpConfig": {
+              "host": "api.paymentprovider.com",
+              "port": 80,
+              "url": "/pay",
+              "verb": "POST",
+              "headers": {
+                "Content-Type": "application/json"
+              },
+              "queryParams": {
+                "token": "abcdef"
+              },
+              "bodyFormat": "json"
+            }
+          }
+        },
+        {
+          "name": "Refund",
+          "protocol": "HTTP",
+          "protocolConfig": {
+            "httpConfig": {
+              "host": "api.paymentprovider.com",
+              "port": 80,
+              "url": "/refund",
+              "verb": "POST",
+              "headers": {
+                "Content-Type": "application/json"
+              },
+              "queryParams": {
+                "token": "abcdef"
+              },
+              "bodyFormat": "json"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

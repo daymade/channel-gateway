@@ -1,0 +1,147 @@
+package tech.typeof.backend.gateway.channel.infrastructure.codec.crypto.sign.js;
+
+import lombok.SneakyThrows;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
+import org.graalvm.polyglot.proxy.ProxyObject;
+import org.junit.jupiter.api.Test;
+
+import javax.script.Invocable;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class JsSignaturerTest {
+    public static final String SOURCE = ""
+                                        + "var N = 2000;\n"
+                                        + "var EXPECTED = 17393;\n"
+                                        + "\n"
+                                        + "function Natural() {\n"
+                                        + "    x = 2;\n"
+                                        + "    return {\n"
+                                        + "        'next' : function() { return x++; }\n"
+                                        + "    };\n"
+                                        + "}\n"
+                                        + "\n"
+                                        + "function Filter(number, filter) {\n"
+                                        + "    var self = this;\n"
+                                        + "    this.number = number;\n"
+                                        + "    this.filter = filter;\n"
+                                        + "    this.accept = function(n) {\n"
+                                        + "      var filter = self;\n"
+                                        + "      for (;;) {\n"
+                                        + "          if (n % filter.number === 0) {\n"
+                                        + "              return false;\n"
+                                        + "          }\n"
+                                        + "          filter = filter.filter;\n"
+                                        + "          if (filter === null) {\n"
+                                        + "              break;\n"
+                                        + "          }\n"
+                                        + "      }\n"
+                                        + "      return true;\n"
+                                        + "    };\n"
+                                        + "    return this;\n"
+                                        + "}\n"
+                                        + "\n"
+                                        + "function Primes(natural) {\n"
+                                        + "    var self = this;\n"
+                                        + "    this.natural = natural;\n"
+                                        + "    this.filter = null;\n"
+                                        + "\n"
+                                        + "    this.next = function() {\n"
+                                        + "        for (;;) {\n"
+                                        + "            var n = self.natural.next();\n"
+                                        + "            if (self.filter === null || self.filter.accept(n)) {\n"
+                                        + "                self.filter = new Filter(n, self.filter);\n"
+                                        + "                return n;\n"
+                                        + "            }\n"
+                                        + "        }\n"
+                                        + "    };\n"
+                                        + "}\n"
+                                        + "\n"
+                                        + "function primesMain() {\n"
+                                        + "    var primes = new Primes(Natural());\n"
+                                        + "    var primArray = [];\n"
+                                        + "    for (var i=0;i<=N;i++) { primArray.push(primes.next()); }\n"
+                                        + "    if (primArray[N] != EXPECTED) { throw new Error('wrong prime found: '+primArray[N]); }\n"
+                                        + "}\n";
+
+    public static final int WARMUP = 30;
+    public static final int ITERATIONS = 10;
+
+    private static long benchScriptEngineIntl(ScriptEngine eng) throws IOException {
+        long sum = 0L;
+        try {
+            eng.eval(SOURCE);
+            Invocable inv = (Invocable) eng;
+            System.out.println("warming up ...");
+            for (int i = 0; i < WARMUP; i++) {
+                inv.invokeFunction("primesMain");
+            }
+            System.out.println("warmup finished, now measuring");
+            for (int i = 0; i < ITERATIONS; i++) {
+                long start = System.currentTimeMillis();
+                inv.invokeFunction("primesMain");
+                long took = System.currentTimeMillis() - start;
+                sum += took;
+                System.out.println("iteration: " + (took));
+            }
+        } catch (Exception ex) {
+            System.out.println(ex);
+        }
+        return sum;
+    }
+
+    @SneakyThrows
+    @Test
+    public void testbenchGraalScriptEngine() {
+        try (Context context = Context.create()) {
+            Value value = context.eval("js", "console.log(1111)");
+        }
+
+        System.out.println("=== Graal.js via javax.script.ScriptEngine ===");
+        ScriptEngine graaljsEngine = new ScriptEngineManager().getEngineByName("Graal.js");
+        if (graaljsEngine == null) {
+            System.out.println("*** Graal.js not found ***");
+        } else {
+            benchScriptEngineIntl(graaljsEngine);
+        }
+    }
+
+    @Test
+    public void testEncrypt() {
+        JsSignaturer jsSignaturer = new JsSignaturer();
+        String data = "Test Data";
+        String result = jsSignaturer.encrypt("(str) => { return JSON.stringify(str); }", data);
+
+        assertEquals("ataD tseT", result, "Encryption output did not match input");
+    }
+
+    @Test
+    void testEncrypt2() {
+        try (Context context = Context.create()) {
+            Map<String, Object> params = new HashMap<>();
+            params.put("key1", "value1");
+            params.put("key2", "value2");
+
+            ProxyObject proxyParams = ProxyObject.fromMap(params);
+            context.getBindings("js").putMember("params", proxyParams);
+            Value result = context.eval("js", "params.key1 + '-' + params.key2");
+
+            System.out.println(result.asString()); // 输出: value1-value2
+            assertEquals("value1-value2", result.asString());
+        }
+    }
+
+    @Test
+    void exec() {
+        JsSignaturer jsSignaturer = new JsSignaturer();
+        jsSignaturer.exec("testFunc",
+                "(str) => { return JSON.stringify(str); }",
+                new String[]{"stttttt"});
+    }
+}
