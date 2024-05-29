@@ -60,6 +60,7 @@ public class ChannelAdapter {
             return GatewayPaymentResponse.success(paymentResponse);
         } catch (RuntimeException e) {
             log.error("Error sending payment request", e);
+
             // 不要向客户端透出服务器异常信息
             return GatewayPaymentResponse.failure("Failed to send payment request, please try again later");
         }
