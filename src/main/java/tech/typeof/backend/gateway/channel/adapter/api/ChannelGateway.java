@@ -14,7 +14,7 @@ public interface ChannelGateway {
      * @return GatewayPaymentResponse the response object representing the transaction's outcome.
      * @throws ChannelGatewayException if any error occurs during processing the payment.
      */
-    GatewayPaymentResponse pay(GatewayPaymentRequest request) throws ChannelGatewayException;
+    GatewayPaymentResponse<String> pay(GatewayPaymentRequest request) throws ChannelGatewayException;
 
     /**
      * Perform refund transaction.

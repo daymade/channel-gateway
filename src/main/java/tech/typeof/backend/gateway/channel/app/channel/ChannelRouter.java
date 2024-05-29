@@ -7,10 +7,11 @@ import tech.typeof.backend.gateway.channel.domain.channel.ChannelConfig;
 
 @Component
 @RequiredArgsConstructor
-public class ChannelGateway {
+public class ChannelRouter {
     private final ChannelConfig channelConfig;
 
     public Channel routeToChannel(String bizCode) {
-        return channelConfig.getChannels().get(0);
+        // TODO 未实现渠道路由
+        return channelConfig.getChannels().getFirst();
     }
 }

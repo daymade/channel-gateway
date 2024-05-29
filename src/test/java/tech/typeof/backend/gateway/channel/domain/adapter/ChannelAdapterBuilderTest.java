@@ -49,9 +49,9 @@ class ChannelAdapterBuilderTest {
 
         Channel.HTTPConfig httpConfig = new Channel.HTTPConfig();
         httpConfig.setBodyFormat("XML");
-//        ability.setProtocolConfig(new Channel.ProtocolConfig().setHttpConfig(httpConfig));
-//
-//        Channel channel = new Channel().setAbilities(new LinkedList<>(Collections.singletonList(ability)));
+        ability.setProtocolConfig(new Channel.ProtocolConfig().setHttpConfig(httpConfig));
+
+        Channel channel = new Channel().setAbilities(new LinkedList<>(Collections.singletonList(ability)));
 
         ChannelAdapterBuilder builder = new ChannelAdapterBuilder();
 

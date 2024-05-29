@@ -2,9 +2,12 @@ package tech.typeof.backend.gateway.channel.domain.adapter;
 
 import lombok.Data;
 import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
+import tech.typeof.backend.gateway.channel.adapter.api.exception.ChannelGatewayException;
 import tech.typeof.backend.gateway.channel.adapter.api.request.GatewayPaymentRequest;
 import tech.typeof.backend.gateway.channel.adapter.api.response.GatewayPaymentResponse;
 import tech.typeof.backend.gateway.channel.domain.channel.Channel;
+import tech.typeof.backend.gateway.channel.domain.constants.ProtocolConstants;
 import tech.typeof.backend.gateway.channel.domain.model.ParamsExtractor;
 import tech.typeof.backend.gateway.channel.infrastructure.codec.crypto.sign.Signaturer;
 import tech.typeof.backend.gateway.channel.infrastructure.codec.format.DataFormatter;
@@ -12,10 +15,10 @@ import tech.typeof.backend.gateway.channel.infrastructure.engine.template.Templa
 import tech.typeof.backend.gateway.channel.infrastructure.transport.protocol.Transport;
 
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 
 @Data
+@Slf4j
 @Accessors(chain = true)
 public class ChannelAdapter {
     private TemplateRenderer protoRender;
@@ -25,32 +28,57 @@ public class ChannelAdapter {
     private DataFormatter dataFormatter;
     private Channel channel;
 
-    // add a validate method to ensure all this property are correctly set
-    public void validate() {
-        Objects.requireNonNull(protoRender, "TemplateRenderer must be set");
-        Objects.requireNonNull(paramsExtractor, "ParamsExtractor must be set");
-        Objects.requireNonNull(transport, "Transport must be set");
-        Objects.requireNonNull(signaturer, "Signaturer must be set");
-        Objects.requireNonNull(dataFormatter, "DataFormatter must be set");
-        Objects.requireNonNull(channel, "Channel must be set");
-    }
-
-    public GatewayPaymentResponse pay(GatewayPaymentRequest request){
-        // TODO 找到 pay 支付能力再找到对应接口，目前 PoC 随便找一个接口试一下
-        var ability = channel.getAbilities().get(0);
-
-        if (!ability.getProtocol().equalsIgnoreCase("HTTP")) {
-            throw new UnsupportedOperationException("Unsupported protocol: " + ability.getProtocol());
+    public GatewayPaymentResponse<String> pay(GatewayPaymentRequest request) {
+        // 检查请求是否合法
+        var error = checkError(request);
+        if (error != null) {
+            return GatewayPaymentResponse.failure("Bad request：" + error);
         }
 
-        var config = ability.getProtocolConfig().getHttpConfig();
+        // TODO 找到 pay 支付能力再找到对应接口，目前 PoC 随便找一个接口试一下
+        var ability = channel.getAbilities().getFirst();
 
+        // 获取支付能力和协议配置
+        var protocol = Optional.of(ability)
+                .map(a -> a.getProtocol())
+                .orElseThrow(() -> new ChannelGatewayException("No protocol found for ability " + ability));
+
+        // PoC 只支持 HTTP 协议
+        if (!ProtocolConstants.HTTP.equalsIgnoreCase(protocol)) {
+            throw new ChannelGatewayException("Unsupported protocol: " + protocol);
+        }
+
+        // 拿到 HTTP 协议配置
+        var config = Optional.of(ability)
+                .map(a -> a.getProtocolConfig())
+                .map(pc -> pc.getHttpConfig())
+                .orElseThrow(() -> new ChannelGatewayException("No protocol config found for ability " + ability));
+
+        // 提取参数并生成报文
         var params = paramsExtractor.extractParams(request);
         var body = protoRender.renderTemplate(config.getTemplate(), params);
         var signedData = signaturer.sign(config.getSignFunc(), body);
 
-        // 支付接口配置
-        Map<String, Object> paymentConfig = new HashMap<>();
+        var payload = buildPayload(config, signedData);
+
+        try {
+            var paymentResponse = transport.sendRequest(payload);
+            return GatewayPaymentResponse.success(paymentResponse);
+        } catch (RuntimeException e) {
+            log.error("Error sending payment request", e);
+            return GatewayPaymentResponse.failure("Failed to send payment request: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 构造报文
+     *
+     * @param config     渠道协议配置
+     * @param signedData 加密后的报文
+     * @return 发给渠道接口的完整报文
+     */
+    private static HashMap<String, Object> buildPayload(Channel.HTTPConfig config, String signedData) {
+        var paymentConfig = new HashMap<String, Object>();
         paymentConfig.put("host", config.getHost());
         paymentConfig.put("port", config.getPort());
         paymentConfig.put("url", config.getUrl());
@@ -58,10 +86,17 @@ public class ChannelAdapter {
         paymentConfig.put("headers", config.getHeaders());
         paymentConfig.put("queryParams", config.getQueryParams());
         paymentConfig.put("body", signedData);
-        // check sign
+        return paymentConfig;
+    }
 
-        String paymentResponse = transport.sendRequest(paymentConfig);
-
-        return new GatewayPaymentResponse("ok", "", paymentResponse);
+    /**
+     * 检查请求是否合法
+     *
+     * @param request 支付请求
+     * @return 具体错误规则，合法时为 null
+     */
+    private String checkError(GatewayPaymentRequest request) {
+        // TODO 改成通用的 Validator
+        return null;
     }
 }

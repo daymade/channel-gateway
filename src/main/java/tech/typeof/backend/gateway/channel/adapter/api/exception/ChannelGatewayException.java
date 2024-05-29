@@ -5,7 +5,7 @@ public class ChannelGatewayException extends RuntimeException {
         super(message);
     }
 
-    public ChannelGatewayException(String message, Throwable cause) {
+    public ChannelGatewayException(String message, RuntimeException cause) {
         super(message, cause);
     }
 }

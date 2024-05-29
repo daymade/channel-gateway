@@ -16,7 +16,7 @@ public class ChannelGatewayImpl implements ChannelGateway {
     private final PayService payService;
 
     @Override
-    public GatewayPaymentResponse pay(GatewayPaymentRequest request) throws ChannelGatewayException {
+    public GatewayPaymentResponse<String> pay(GatewayPaymentRequest request) throws ChannelGatewayException {
         return payService.pay(request);
     }
 

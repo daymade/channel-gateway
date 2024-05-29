@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 import tech.typeof.backend.gateway.channel.domain.channel.Channel;
 import tech.typeof.backend.gateway.channel.domain.channel.ChannelConfig;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 class ChannelConfigTest {
 
     @SneakyThrows
@@ -32,5 +34,7 @@ class ChannelConfigTest {
                 }
             }
         }
+
+        assertTrue(config.getChannels().getFirst().getIsEnabled());
     }
 }

@@ -4,30 +4,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.annotation.PostConstruct;
+import lombok.Getter;
 import org.springframework.context.annotation.Configuration;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
+@Getter
 @Configuration
 public class ChannelConfig {
     private List<Channel> channels;
-
-    public List<Channel> getChannels() {
-        return channels;
-    }
-
-    public void setChannels(List<Channel> channels) {
-        this.channels = channels;
-    }
 
     // init channel from json when app starts
     @PostConstruct
     public void initChannels() throws IOException {
         channels = ChannelConfig.fromJsonFile("channel/channel-config.json").getChannels();
     }
-
 
     public static ChannelConfig fromJsonFile(String filePath) throws IOException {
         ObjectMapper mapper = new ObjectMapper();

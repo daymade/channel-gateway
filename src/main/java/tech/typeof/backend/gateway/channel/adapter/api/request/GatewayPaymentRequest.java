@@ -6,13 +6,48 @@ import java.math.BigDecimal;
 
 @Data
 public class GatewayPaymentRequest {
-    private String bizCode;           // 业务身份
-    private BigDecimal amount;        // 交易金额
-    private String currency;          // 币种，例如 USD, CNY
-    private String paymentMethod;     // 支付方式，例如 CREDIT_CARD, PAYPAL
-    private String orderId;           // 订单ID
-    private String description;       // 交易描述
-    private String callbackUrl;       // 回调URL
-    private String customerEmail;     // 顾客邮箱
-    private String customerPhone;     // 顾客电话
+    /**
+     * 业务身份
+     */
+    private String bizCode;
+
+    /**
+     * 交易金额
+     */
+    private BigDecimal amount;
+
+    /**
+     * 币种，例如 USD, CNY
+     */
+    private String currency;
+
+    /**
+     * 支付方式，例如 CREDIT_CARD, PAYPAL
+     */
+    private String paymentMethod;
+
+    /**
+     * 订单ID
+     */
+    private String orderId;
+
+    /**
+     * 交易描述
+     */
+    private String description;
+
+    /**
+     * 回调URL
+     */
+    private String callbackUrl;
+
+    /**
+     * 顾客邮箱
+     */
+    private String customerEmail;
+
+    /**
+     * 顾客电话
+     */
+    private String customerPhone;
 }

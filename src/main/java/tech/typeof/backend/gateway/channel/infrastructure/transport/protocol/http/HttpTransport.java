@@ -23,13 +23,13 @@ public class HttpTransport implements Transport {
 
     public String sendRequest(Map<String, Object> config) throws RuntimeException {
         // Extract configuration parameters
-        String host = (String) config.get("host");
-        int port = (int) config.get("port");
-        String url = (String) config.get("url");
-        String verb = (String) config.get("verb");
-        Map<String, String> headers = (Map<String, String>) config.get("headers");
-        Map<String, String> queryParams = (Map<String, String>) config.get("queryParams");
-        String body = (String) config.get("body");
+        var host = (String) config.get("host");
+        var port = (int) config.get("port");
+        var url = (String) config.get("url");
+        var verb = (String) config.get("verb");
+        var headers = (Map<String, String>) config.get("headers");
+        var queryParams = (Map<String, String>) config.get("queryParams");
+        var body = (String) config.get("body");
 
         // Build the full URI with query parameters
         URI uri = null;
@@ -40,7 +40,7 @@ public class HttpTransport implements Transport {
         }
 
         // Create the request
-        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
+        var requestBuilder = HttpRequest.newBuilder()
                 .uri(uri)
                 .method(verb.toUpperCase(), HttpRequest.BodyPublishers.ofString(body != null ? body : ""));
 
@@ -49,19 +49,16 @@ public class HttpTransport implements Transport {
             headers.forEach(requestBuilder::header);
         }
 
-        HttpRequest request = requestBuilder.build();
+        var request = requestBuilder.build();
 
         // Send the request and get the response
         HttpResponse<String> response = null;
         try {
             response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
 
-        // Return the response body
         return response.body();
     }
 
@@ -69,13 +66,16 @@ public class HttpTransport implements Transport {
         if (queryParams == null || queryParams.isEmpty()) {
             return null;
         }
-        StringBuilder queryString = new StringBuilder();
+
+        var queryString = new StringBuilder();
+
         queryParams.forEach((key, value) -> {
-            if (queryString.length() > 0) {
+            if (!queryString.isEmpty()) {
                 queryString.append("&");
             }
             queryString.append(key).append("=").append(value);
         });
+
         return queryString.toString();
     }
 }
