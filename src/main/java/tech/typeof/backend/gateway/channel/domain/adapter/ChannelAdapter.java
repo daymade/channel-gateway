@@ -28,6 +28,12 @@ public class ChannelAdapter {
     private DataFormatter dataFormatter;
     private Channel channel;
 
+    /**
+     * 找到对应渠道发起支付请求
+     *
+     * @param request 支付请求参数
+     * @return 是否成功
+     */
     public GatewayPaymentResponse<String> pay(GatewayPaymentRequest request) {
         // 检查请求是否合法
         var error = checkError(request);
@@ -35,7 +41,33 @@ public class ChannelAdapter {
             return GatewayPaymentResponse.failure("Bad request：" + error);
         }
 
-        // TODO 找到 pay 支付能力再找到对应接口，目前 PoC 随便找一个接口试一下
+        // 拿到 HTTP 协议配置，包括报文模板和加密等配置
+        var config = getTransportConfig(request);
+
+        // 提取参数
+        var params = paramsExtractor.extractParams(request);
+        var body = protoRender.renderTemplate(config.getTemplate(), params);
+        var signedData = signaturer.sign(config.getSignFunc(), body);
+
+        // 构造报文
+        var payload = buildPayload(config, signedData);
+
+        try {
+            var paymentResponse = transport.sendRequest(payload);
+            return GatewayPaymentResponse.success(paymentResponse);
+        } catch (RuntimeException e) {
+            log.error("Error sending payment request", e);
+            return GatewayPaymentResponse.failure("Failed to send payment request: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 拿到 HTTP 协议配置
+     *
+     * @return HTTP 协议配置，包括报文模板和加密等配置
+     */
+    private Channel.HTTPConfig getTransportConfig(GatewayPaymentRequest request) {
+        // TODO 根据 request 找到 pay 支付能力再找到对应接口，目前 PoC 随便找一个接口试一下
         var ability = channel.getAbilities().getFirst();
 
         // 获取支付能力和协议配置
@@ -48,26 +80,10 @@ public class ChannelAdapter {
             throw new ChannelGatewayException("Unsupported protocol: " + protocol);
         }
 
-        // 拿到 HTTP 协议配置
-        var config = Optional.of(ability)
+        return Optional.of(ability)
                 .map(a -> a.getProtocolConfig())
                 .map(pc -> pc.getHttpConfig())
                 .orElseThrow(() -> new ChannelGatewayException("No protocol config found for ability " + ability));
-
-        // 提取参数并生成报文
-        var params = paramsExtractor.extractParams(request);
-        var body = protoRender.renderTemplate(config.getTemplate(), params);
-        var signedData = signaturer.sign(config.getSignFunc(), body);
-
-        var payload = buildPayload(config, signedData);
-
-        try {
-            var paymentResponse = transport.sendRequest(payload);
-            return GatewayPaymentResponse.success(paymentResponse);
-        } catch (RuntimeException e) {
-            log.error("Error sending payment request", e);
-            return GatewayPaymentResponse.failure("Failed to send payment request: " + e.getMessage());
-        }
     }
 
     /**
