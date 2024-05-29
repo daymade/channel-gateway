@@ -11,7 +11,7 @@ public class GatewayPaymentResponse<T> {
     private static final String FAILED = "FAILED";
 
     /**
-     * 防止外部调用, 只能通过 {@link tech.typeof.backend.gateway.channel.adapter.api.utils.ResponseUtils} 调用
+     * 防止外部调用生成不合法响应
      */
     private GatewayPaymentResponse() {
     }
@@ -30,6 +30,12 @@ public class GatewayPaymentResponse<T> {
      * 数据
      */
     private T data;
+
+
+    // 请求是否成功
+    public boolean isSuccessful() {
+        return SUCCESS.equals(status);
+    }
 
     public static <T> GatewayPaymentResponse<T> success(T data) {
         return new GatewayPaymentResponse<T>()

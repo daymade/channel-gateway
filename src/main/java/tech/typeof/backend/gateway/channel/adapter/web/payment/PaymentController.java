@@ -21,8 +21,12 @@ public class PaymentController {
     public ResponseEntity<GatewayPaymentResponse<String>> pay(@RequestBody GatewayPaymentRequest request) {
         try {
             var response = channelGateway.pay(request);
+            if (response.isSuccessful()){
+                return ResponseEntity.ok(response);
+            }
 
-            return new ResponseEntity<>(response, HttpStatus.OK);
+            return ResponseEntity.internalServerError()
+                    .body(response);
         } catch (ChannelGatewayException e) {
             log.error("channel gateway pay failed", e);
 

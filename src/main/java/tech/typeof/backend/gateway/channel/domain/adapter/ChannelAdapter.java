@@ -43,6 +43,7 @@ public class ChannelAdapter {
 
         // 拿到 HTTP 协议配置，包括报文模板和加密等配置
         var config = getTransportConfig(request);
+        log.info("transport config: {}, for request: {}", config, request);
 
         // 提取参数
         var params = paramsExtractor.extractParams(request);
@@ -53,11 +54,14 @@ public class ChannelAdapter {
         var payload = buildPayload(config, signedData);
 
         try {
+            log.info("about to send payload: {}", payload);
+
             var paymentResponse = transport.sendRequest(payload);
             return GatewayPaymentResponse.success(paymentResponse);
         } catch (RuntimeException e) {
             log.error("Error sending payment request", e);
-            return GatewayPaymentResponse.failure("Failed to send payment request: " + e.getMessage());
+            // 不要向客户端透出服务器异常信息
+            return GatewayPaymentResponse.failure("Failed to send payment request, please try again later");
         }
     }
 
