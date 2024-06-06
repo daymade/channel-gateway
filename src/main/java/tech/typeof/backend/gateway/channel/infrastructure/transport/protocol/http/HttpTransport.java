@@ -1,5 +1,6 @@
 package tech.typeof.backend.gateway.channel.infrastructure.transport.protocol.http;
 
+import tech.typeof.backend.gateway.channel.domain.core.GatewayContext;
 import tech.typeof.backend.gateway.channel.infrastructure.transport.protocol.Transport;
 
 import java.io.IOException;
@@ -11,7 +12,7 @@ import java.net.http.HttpResponse;
 import java.util.Map;
 
 public class HttpTransport implements Transport {
-    private HttpClient httpClient;
+    private final HttpClient httpClient;
 
     public HttpTransport() {
         this.httpClient = HttpClient.newHttpClient();
@@ -21,8 +22,9 @@ public class HttpTransport implements Transport {
         this.httpClient = httpClient;
     }
 
-    public String sendRequest(Map<String, Object> config) throws RuntimeException {
+    public String sendRequest(GatewayContext context, Map<String, Object> config) throws RuntimeException {
         // Extract configuration parameters
+        var scheme = (String) config.get("scheme");
         var host = (String) config.get("host");
         var port = (int) config.get("port");
         var url = (String) config.get("url");
@@ -34,7 +36,7 @@ public class HttpTransport implements Transport {
         // Build the full URI with query parameters
         URI uri = null;
         try {
-            uri = new URI("http", null, host, port, url, buildQueryString(queryParams), null);
+            uri = new URI(scheme, null, host, port, url, buildQueryString(queryParams), null);
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }

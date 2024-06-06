@@ -3,7 +3,11 @@ package tech.typeof.backend.gateway.channel.domain.adapter;
 import org.springframework.stereotype.Component;
 import tech.typeof.backend.gateway.channel.adapter.api.exception.ChannelGatewayException;
 import tech.typeof.backend.gateway.channel.domain.channel.Channel;
+import tech.typeof.backend.gateway.channel.domain.model.ParamsExtractor;
+import tech.typeof.backend.gateway.channel.domain.model.ParamsValidator;
+import tech.typeof.backend.gateway.channel.infrastructure.codec.crypto.sign.js.JsSignaturer;
 import tech.typeof.backend.gateway.channel.infrastructure.codec.format.json.JsonDataFormatter;
+import tech.typeof.backend.gateway.channel.infrastructure.engine.template.TemplateRenderer;
 import tech.typeof.backend.gateway.channel.infrastructure.transport.protocol.http.HttpTransport;
 
 import java.util.Objects;
@@ -37,8 +41,12 @@ public class ChannelAdapterBuilder {
         if (!JSON.equalsIgnoreCase(bodyFormat)) {
             throw new ChannelGatewayException("cannot find data formatter of %s for%s".formatted(bodyFormat, ability));
         }
-
         channelAdapter.setDataFormatter(new JsonDataFormatter());
+
+        channelAdapter.setParamsValidator(new ParamsValidator());
+        channelAdapter.setProtoRender(new TemplateRenderer());
+        channelAdapter.setParamsExtractor(new ParamsExtractor());
+        channelAdapter.setSignaturer(new JsSignaturer());
 
         // 返回之前验证一下 adapter 是否可用
         validate(channelAdapter);

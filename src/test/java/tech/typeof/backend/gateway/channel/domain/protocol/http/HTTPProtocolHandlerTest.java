@@ -1,8 +1,6 @@
 package tech.typeof.backend.gateway.channel.domain.protocol.http;
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import tech.typeof.backend.gateway.channel.infrastructure.transport.protocol.http.HttpTransport;
@@ -12,6 +10,7 @@ import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 public class HTTPProtocolHandlerTest {
@@ -33,18 +32,13 @@ public class HTTPProtocolHandlerTest {
         when(responseMock.body()).thenReturn("test response");
 
         // Make the mock client return the mock response when called
-        when(httpClientMock.send(any(), any())).thenAnswer(new Answer<>() {
-            @Override
-            public HttpResponse<String> answer(InvocationOnMock invocation) {
-                return responseMock;
-            }
-        });
+        when(httpClientMock.send(any(), any())).thenAnswer(invocation -> responseMock);
 
         // Create an instance of the class to test, with the mock client injected
         HttpTransport httpProtocolHandler = new HttpTransport(httpClientMock);
 
         // run sendRequest method
-        String response = httpProtocolHandler.sendRequest(testConfig);
+        String response = httpProtocolHandler.sendRequest(null, testConfig);
 
         // Check that the response matches the mock response body
         assertEquals("test response", response);
@@ -80,7 +74,7 @@ public class HTTPProtocolHandlerTest {
         paymentConfig.put("queryParams", Map.of("token", "abcdef"));
         paymentConfig.put("body", "{\"amount\": 100.50, \"currency\": \"USD\"}");
 
-        String paymentResponse = httpProtocolHandler.sendRequest(paymentConfig);
+        String paymentResponse = httpProtocolHandler.sendRequest(null, paymentConfig);
         System.out.println("支付接口响应: " + paymentResponse);
     }
 }

@@ -1,6 +1,8 @@
 package tech.typeof.backend.gateway.channel.infrastructure.codec.crypto.sign.js;
 
+import org.apache.commons.lang3.StringUtils;
 import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
 import org.springframework.stereotype.Component;
 import tech.typeof.backend.gateway.channel.infrastructure.codec.crypto.sign.Signaturer;
 
@@ -8,40 +10,45 @@ import tech.typeof.backend.gateway.channel.infrastructure.codec.crypto.sign.Sign
 public class JsSignaturer implements Signaturer {
     private static final String JS = "js";
 
+    protected String exec(String funcName, String funcCode, String... args) {
+        if (StringUtils.isBlank(funcCode)) {
+            return args.length > 0 ? args[0] : null;
+        }
+
+        try (Context context = Context.create()) {
+            context.eval(JS, defineFunction(funcName, funcCode));
+            var jsFunc = context.getBindings(JS).getMember(funcName);
+
+            // 创建一个新的 JavaScript 数组并将 Java 参数插入到该数组中, 以便在 js 中调用
+            Value jsArray = context.eval(JS, "new Array()");
+            for (Object arg : args) {
+                jsArray.setArrayElement(jsArray.getArraySize(), arg);
+            }
+
+            var result = jsFunc.execute(jsArray);
+            return result.asString();
+        }
+    }
+
     @Override
     public String encrypt(String encryptFunc, String data) {
-        return exec("encryptFunc", encryptFunc, new String[]{data});
+        return exec("encryptFunc", encryptFunc, data);
     }
 
     @Override
     public String decrypt(String decryptFunc, String encryptedData) {
-        return exec("decryptFunc", decryptFunc, new String[]{encryptedData});
+        return exec("decryptFunc", decryptFunc, encryptedData);
     }
 
     @Override
     public String sign(String signFunc, String data) {
-        return exec("signFunc", signFunc, new String[]{data});
+        return exec("signFunc", signFunc, data);
     }
 
     @Override
     public boolean verifySignature(String verifySignFunc, String signedData, String signature) {
-        var result = exec("verifySignFunc", verifySignFunc, new String[]{signedData, signature});
-        return result.equalsIgnoreCase("OK");
-    }
-
-    protected static String exec(String funcName, String funcCode, String[]... args) {
-        try (Context context = Context.create()) {
-
-            context.eval(JS, defineFunction(funcName, funcCode));
-            var jsFunc = context.getBindings(JS).getMember(funcName);
-
-            // 将 Java 字符串自动转换为 JavaScript 字符串
-            context.getBindings(JS).putMember("params", args);
-            var jsParams = context.getBindings(JS).getMember("params");
-
-            var result = jsFunc.execute(jsParams);
-            return result.asString();
-        }
+        var result = exec("verifySignFunc", verifySignFunc, signedData, signature);
+        return "OK".equalsIgnoreCase(result);
     }
 
     /**

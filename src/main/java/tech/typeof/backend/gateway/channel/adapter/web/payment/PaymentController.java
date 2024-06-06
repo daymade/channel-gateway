@@ -28,8 +28,13 @@ public class PaymentController {
             return ResponseEntity.internalServerError()
                     .body(response);
         } catch (ChannelGatewayException e) {
-            log.error("channel gateway pay failed", e);
+            if (e.getHttpStatus().is4xxClientError()) {
+                log.warn("channel gateway pay failed", e);
+                return ResponseEntity.badRequest()
+                        .body(GatewayPaymentResponse.failure(e.getMessage()));
+            }
 
+            log.error("channel gateway pay failed", e);
             return ResponseEntity.internalServerError()
                     .body(GatewayPaymentResponse.failure("payment failed, please try again later"));
         }

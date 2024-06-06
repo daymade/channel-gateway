@@ -1,7 +1,7 @@
 {
   "channels": [
     {
-      "name": "Payment Channel",
+      "name": "AlvPay",
       "isEnabled": true,
       "abilities": [
         {
@@ -9,6 +9,7 @@
           "protocol": "HTTP",
           "protocolConfig": {
             "httpConfig": {
+              "scheme": "https",
               "host": "api.paymentprovider.com",
               "port": 80,
               "url": "/pay",
@@ -19,9 +20,47 @@
               "queryParams": {
                 "token": "abcdef"
               },
-              "template": "{\n    \"currency\": \"[[${currency}]]\",\n    \"amount\": [[${amount}]]\n}",
-              "encryptFunc": "",
-              "signFunc": "",
+              "mappings": [
+                {
+                  "target": "out_trade_no",
+                  "source": "outTradeNo",
+                  "required": true
+                },
+                {
+                  "target": "currency",
+                  "source": "currency",
+                  "required": true
+                },
+                {
+                  "target": "amount",
+                  "source": "amount",
+                  "required": true
+                },
+                {
+                  "target": "total_amount",
+                  "source": "amount",
+                  "required": true
+                },
+                {
+                  "target": "subject",
+                  "source": "productTitle",
+                  "required": true
+                },
+                {
+                  "target": "body",
+                  "source": "productDescription",
+                  "required": false
+                },
+                {
+                  "target": "timeout_express",
+                  "source": "timeoutExpress",
+                  "required": false,
+                  "defaultValue": "90m"
+                }
+              ],
+              "template": "{\n  \"out_trade_no\": \"[[${out_trade_no}]]\",\n  \"total_amount\": [[${total_amount}]],\n  \"subject\": \"[[${subject}]]\",\n  \"body\": \"[[${body}]]\",\n  \"timeout_express\": \"[[${timeout_express}]]\"\n}",
+              "encryptFunc": "args => args[0]",
+              "signFunc": "args => args[0]",
               "bodyFormat": "json"
             }
           }
@@ -31,6 +70,7 @@
           "protocol": "HTTP",
           "protocolConfig": {
             "httpConfig": {
+              "scheme": "https",
               "host": "api.paymentprovider.com",
               "port": 80,
               "url": "/refund",
@@ -41,6 +81,9 @@
               "queryParams": {
                 "token": "abcdef"
               },
+              "template": "{\n  \"out_trade_no\": \"[[${out_trade_no}]]\",\n  \"total_amount\": [[${total_amount}]],\n  \"subject\": \"[[${subject}]]\",\n  \"body\": \"[[${body}]]\",\n  \"timeout_express\": \"[[${timeout_express}]]\"\n}",
+              "encryptFunc": "args => args[0]",
+              "signFunc": "args => args[0]",
               "bodyFormat": "json"
             }
           }
