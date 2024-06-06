@@ -19,6 +19,9 @@ public class Channel {
 
     private Boolean isEnabled;
 
+    // 用于签名的私钥, 生产环境要找个 keycenter 存储，禁止写在代码里
+    private String privateKeyPEM;
+
     private List<PaymentAbility> abilities;
 
     /**
