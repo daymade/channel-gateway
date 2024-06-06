@@ -4,13 +4,12 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import org.springframework.http.HttpStatus;
 import tech.typeof.backend.gateway.channel.adapter.api.exception.ChannelGatewayException;
-import tech.typeof.backend.gateway.channel.adapter.api.request.GatewayPaymentRequest;
 
 import java.util.Set;
 
 public class ParamsValidator {
 
-    public void validate(GatewayPaymentRequest request) {
+    public void validate(Object request) {
         try (var validator = Validation.buildDefaultValidatorFactory()) {
             Set<ConstraintViolation<Object>> violations = validator.getValidator().validate(request);
             if (!violations.isEmpty()) {

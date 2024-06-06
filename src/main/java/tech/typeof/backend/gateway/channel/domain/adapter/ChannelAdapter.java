@@ -56,17 +56,11 @@ public class ChannelAdapter {
      * @return 是否成功
      */
     public GatewayPaymentResponse<String> pay(GatewayPaymentRequest request) {
-        // 检查请求是否合法
-        var error = checkError(request);
-        if (error != null) {
-            return GatewayPaymentResponse.failure("Bad request：" + error);
-        }
+        paramsValidator.validate(request);
 
         // 拿到 HTTP 协议配置，包括报文模板和加密等配置
         var config = channel.getTransportConfig("Payment");
         log.info("transport config: {}, for request: {}", config, request);
-
-        paramsValidator.validate(request);
 
         // 提取参数
         var params = paramsExtractor.extractParams(request, config.getMappings());
@@ -90,11 +84,7 @@ public class ChannelAdapter {
     }
 
     public GatewayRefundResponse<String> refund(GatewayRefundRequest request) {
-        // 检查请求是否合法
-        var error = checkError(request);
-        if (error != null) {
-            return GatewayRefundResponse.failure("Bad request：" + error);
-        }
+        paramsValidator.validate(request);
 
         // 拿到 HTTP 协议配置，包括报文模板和加密等配置
         var config = channel.getTransportConfig("Refund");
@@ -110,20 +100,5 @@ public class ChannelAdapter {
         var payload = buildPayload(config, signedData);
 
         return GatewayRefundResponse.success("Refund success");
-    }
-
-    private String checkError(GatewayRefundRequest request) {
-        return null;
-    }
-
-    /**
-     * 检查请求是否合法
-     *
-     * @param request 支付请求
-     * @return 具体错误规则，合法时为 null
-     */
-    private String checkError(GatewayPaymentRequest request) {
-        // TODO 改成通用的 Validator
-        return null;
     }
 }
